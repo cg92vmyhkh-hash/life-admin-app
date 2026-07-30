@@ -393,6 +393,12 @@
       border-radius: var(--radius-lg);
     }
 
+    .storage-note {
+      margin-top: var(--space-3);
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+    }
+
     [hidden] { display: none !important; }
 
     @media (max-width: 900px) {
@@ -478,6 +484,10 @@
               <span>Completed</span>
             </div>
           </div>
+
+          <p class="storage-note" id="storageNote" hidden>
+            Your browser is blocking saved storage, so tasks will work for now but may not stay after refresh.
+          </p>
         </section>
 
         <section class="panel view" data-view-panel="capture" hidden>
@@ -532,5 +542,290 @@
                   <span class="task-dot"></span>
                   <div>
                     <h3>Set the priority</h3>
-                    <p>Mark what needs attention first.
-      
+                    <p>Mark what needs attention first.</p>
+                  </div>
+                </div>
+                <div class="task success">
+                  <span class="task-dot"></span>
+                  <div>
+                    <h3>Save it</h3>
+                    <p>Your task stays saved in your browser when storage is available.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel view" data-view-panel="queue" hidden>
+          <div class="toolbar">
+            <div>
+              <div class="eyebrow">Priority list</div>
+              <p class="subtitle">Focus on what matters first.</p>
+            </div>
+
+            <div class="filters">
+              <button class="filter-btn active" type="button" data-filter="all">All</button>
+              <button class="filter-btn" type="button" data-filter="high">High</button>
+              <button class="filter-btn" type="button" data-filter="medium">Medium</button>
+              <button class="filter-btn" type="button" data-filter="done">Done</button>
+            </div>
+          </div>
+
+          <div id="taskList" class="task-list"></div>
+
+          <div id="emptyState" class="empty-state" hidden>
+            <h2 style="font-size:var(--text-lg); margin-bottom:var(--space-2);">No tasks here yet</h2>
+            <p>Add your first task and it will show up here.</p>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'life-admin-tasks-v1';
+    const THEME_KEY = 'life-admin-theme-v1';
+
+    function storageAvailable() {
+      try {
+        const test = '__life_admin_test__';
+        window.localStorage.setItem(test, test);
+        window.localStorage.removeItem(test);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    const canStore = storageAvailable();
+
+    const defaultTasks = [
+      {
+        id: String(Date.now()) + '1',
+        title: 'Car registration expires Tuesday',
+        type: 'renewal',
+        priority: 'high',
+        notes: 'Review before any late fee applies.'
+      },
+      {
+        id: String(Date.now()) + '2',
+        title: 'Cancel trial before Friday',
+        type: 'bill',
+        priority: 'medium',
+        notes: 'Streaming add-on renews soon.'
+      }
+    ];
+
+    function getSavedTasks() {
+      if (!canStore) return null;
+      try {
+        const raw = window.localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function getSavedTheme() {
+      if (!canStore) return null;
+      try {
+        return window.localStorage.getItem(THEME_KEY);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    const savedTasks = getSavedTasks();
+    const savedTheme = getSavedTheme();
+
+    const state = {
+      view: 'dashboard',
+      filter: 'all',
+      theme: savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+      tasks: savedTasks && Array.isArray(savedTasks) ? savedTasks : defaultTasks
+    };
+
+    const pageTitles = {
+      dashboard: ['Life Admin', 'Stay ahead of bills, renewals, forms, and household tasks in one calm place.'],
+      capture: ['Add task', 'Quickly save something important before you forget it.'],
+      queue: ['Priority list', 'See your most important tasks first.']
+    };
+
+    function saveTasks() {
+      if (!canStore) return;
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
+      } catch (e) {}
+    }
+
+    function saveTheme() {
+      if (!canStore) return;
+      try {
+        window.localStorage.setItem(THEME_KEY, state.theme);
+      } catch (e) {}
+    }
+
+    function setTheme() {
+      document.documentElement.setAttribute('data-theme', state.theme);
+    }
+
+    function setView(view) {
+      state.view = view;
+
+      document.querySelectorAll('[data-view-panel]').forEach(panel => {
+        panel.hidden = panel.dataset.viewPanel !== view;
+      });
+
+      document.querySelectorAll('.nav button').forEach(button => {
+        button.classList.toggle('active', button.dataset.view === view);
+      });
+
+      document.getElementById('pageTitle').textContent = pageTitles[view][0];
+      document.getElementById('pageSubtitle').textContent = pageTitles[view][1];
+
+      if (view === 'queue') {
+        renderTasks();
+      }
+    }
+
+    function updateStats() {
+      const openTasks = state.tasks.filter(task => task.priority !== 'done').length;
+      const highTasks = state.tasks.filter(task => task.priority === 'high').length;
+      const doneTasks = state.tasks.filter(task => task.priority === 'done').length;
+
+      document.getElementById('kpiOpen').textContent = openTasks;
+      document.getElementById('kpiHigh').textContent = highTasks;
+      document.getElementById('kpiDone').textContent = doneTasks;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function renderTasks() {
+      const list = document.getElementById('taskList');
+      const emptyState = document.getElementById('emptyState');
+
+      const visibleTasks = state.tasks.filter(task => {
+        return state.filter === 'all' || task.priority === state.filter;
+      });
+
+      list.innerHTML = visibleTasks.map(task => {
+        const taskClass = task.priority === 'high' ? 'warning' : task.priority === 'done' ? 'success' : '';
+        return `
+          <article class="task ${taskClass}">
+            <span class="task-dot"></span>
+            <div>
+              <div class="pill ${escapeHtml(task.priority)}">${escapeHtml(task.priority)}</div>
+              <h3>${escapeHtml(task.title)}</h3>
+              <p>${escapeHtml(task.notes || 'No notes added.')}</p>
+              <small>${escapeHtml(task.type)}</small>
+            </div>
+            <div style="display:grid; gap:8px;">
+              <button class="button-secondary" type="button" data-done-id="${escapeHtml(task.id)}">Done</button>
+              <button class="button-secondary" type="button" data-delete-id="${escapeHtml(task.id)}">Delete</button>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      list.querySelectorAll('[data-done-id]').forEach(button => {
+        button.addEventListener('click', () => markDone(button.getAttribute('data-done-id')));
+      });
+
+      list.querySelectorAll('[data-delete-id]').forEach(button => {
+        button.addEventListener('click', () => deleteTask(button.getAttribute('data-delete-id')));
+      });
+
+      emptyState.hidden = visibleTasks.length !== 0;
+      updateStats();
+    }
+
+    function markDone(id) {
+      state.tasks = state.tasks.map(task => {
+        if (task.id === id) {
+          return { ...task, priority: 'done' };
+        }
+        return task;
+      });
+      saveTasks();
+      renderTasks();
+    }
+
+    function deleteTask(id) {
+      state.tasks = state.tasks.filter(task => task.id !== id);
+      saveTasks();
+      renderTasks();
+    }
+
+    document.querySelectorAll('.nav button').forEach(button => {
+      button.addEventListener('click', () => setView(button.dataset.view));
+    });
+
+    document.getElementById('goAddTask').addEventListener('click', () => {
+      setView('capture');
+    });
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      state.theme = state.theme === 'dark' ? 'light' : 'dark';
+      saveTheme();
+      setTheme();
+    });
+
+    document.querySelectorAll('.filter-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        state.filter = button.dataset.filter;
+
+        document.querySelectorAll('.filter-btn').forEach(item => {
+          item.classList.toggle('active', item === button);
+        });
+
+        renderTasks();
+      });
+    });
+
+    document.getElementById('taskForm').addEventListener('submit', event => {
+      event.preventDefault();
+
+      const formData = new FormData(event.currentTarget);
+      const title = String(formData.get('title') || '').trim();
+      const type = String(formData.get('type') || 'follow-up').trim();
+      const priority = String(formData.get('priority') || 'medium').trim();
+      const notes = String(formData.get('notes') || '').trim();
+
+      if (!title) return;
+
+      state.tasks.unshift({
+        id: String(Date.now()) + Math.random().toString(16).slice(2),
+        title,
+        type,
+        priority,
+        notes
+      });
+
+      saveTasks();
+      event.currentTarget.reset();
+      state.filter = 'all';
+      document.querySelectorAll('.filter-btn').forEach(item => {
+        item.classList.toggle('active', item.dataset.filter === 'all');
+      });
+      setView('queue');
+      renderTasks();
+    });
+
+    if (!canStore) {
+      document.getElementById('storageNote').hidden = false;
+    }
+
+    setTheme();
+    updateStats();
+    renderTasks();
+  </script>
+</body>
+</html>
