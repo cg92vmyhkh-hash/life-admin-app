@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Life Admin App</title>
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+  <style>
+    :root, [data-theme="light"] {
+      --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+      --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem; --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem;
+      --color-bg:#f7f6f2; --color-surface:#f9f8f5; --color-surface-2:#fbfbf9; --color-surface-offset:#f3f0ec; --color-border:#d4d1ca; --color-divider:#dcd9d5;
+      --color-text:#28251d; --color-text-muted:#73716b; --color-text-faint:#a09d95; --color-text-inverse:#f9f8f4;
+      --color-primary:#01696f; --color-primary-hover:#0c4e54; --color-primary-highlight:#cedcd8; --color-warning:#964219; --color-warning-highlight:#ead7cd; --color-success:#437a22; --color-success-highlight:#d4dfcc;
+      --shadow-sm: 0 1px 2px rgba(25, 25, 20, 0.06); --shadow-md: 0 10px 28px rgba(25, 25, 20, 0.08);
+      --radius-sm: 0.5rem; --radius-md: 0.8rem; --radius-lg: 1rem; --radius-xl: 1.25rem; --radius-full: 9999px;
+      --transition-interactive: 180ms cubic-bezier(0.16, 1, 0.3, 1); --font-body:'Satoshi', Inter, sans-serif;
+    }
+    [data-theme="dark"] {
+      --color-bg:#171614; --color-surface:#1c1b19; --color-surface-2:#201f1d; --color-surface-offset:#23211f; --color-border:#393836; --color-divider:#2a2927;
+      --color-text:#cdccca; --color-text-muted:#989692; --color-text-faint:#6f6d69; --color-text-inverse:#1d1b19;
+      --color-primary:#4f98a3; --color-primary-hover:#227f8b; --color-primary-highlight:#313b3b; --color-warning:#d89a73; --color-warning-highlight:#4e4139; --color-success:#7faf5d; --color-success-highlight:#34412f;
+      --shadow-sm:0 1px 2px rgba(0,0,0,.18); --shadow-md:0 10px 28px rgba(0,0,0,.28);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;overflow:hidden}
+    body{font-family:var(--font-body);font-size:var(--text-base);line-height:1.5;background:var(--color-bg);color:var(--color-text);-webkit-font-smoothing:antialiased}
+    button,input,select,textarea{font:inherit;color:inherit}
+    button{cursor:pointer;border:none;background:none}
+    a{text-decoration:none;color:inherit}
+    :focus-visible{outline:2px solid var(--color-primary);outline-offset:3px;border-radius:var(--radius-sm)}
+    .skip-link{position:absolute;left:-9999px;top:auto}
+    .skip-link:focus{left:var(--space-4);top:var(--space-4);z-index:100;background:var(--color-surface);padding:var(--space-2) var(--space-3);border-radius:var(--radius-sm)}
+    .app{display:grid;grid-template-columns:280px 1fr;grid-template-rows:auto 1fr;height:100dvh}
+    .sidebar{grid-row:1 / -1;overflow-y:auto;overscroll-behavior:contain;background:var(--color-surface);border-right:1px solid color-mix(in oklab, var(--color-text) 10%, transparent);padding:var(--space-5);display:flex;flex-direction:column;gap:var(--space-5)}
+    .logo{display:flex;align-items:center;gap:var(--space-3);font-weight:700;font-size:var(--text-sm)}
+    .logo-mark{width:38px;height:38px;color:var(--color-primary)}
+    .nav{display:grid;gap:var(--space-2)}
+    .nav button{min-height:44px;padding:0 var(--space-4);border-radius:var(--radius-md);text-align:left;background:transparent;border:1px solid transparent}
+    .nav button.active{background:var(--color-primary-highlight);color:var(--color-primary)}
+    .nav button:hover{background:var(--color-surface-2)}
+    .side-card{padding:var(--space-4);border-radius:var(--radius-lg);background:var(--color-surface-2);border:1px solid color-mix(in oklab, var(--color-text) 8%, transparent)}
+    .side-card p{color:var(--color-text-muted);font-size:var(--text-sm);margin-top:var(--space-2)}
+    .header{grid-column:2;display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);padding:var(--space-4) var(--space-5);border-bottom:1px solid color-mix(in oklab, var(--color-text) 10%, transparent);background:color-mix(in oklab, var(--color-bg) 88%, transparent);backdrop-filter:blur(8px)}
+    .header-copy h1{font-size:var(--text-xl);line-height:1.05}
+    .header-copy p{color:var(--color-text-muted);font-size:var(--text-sm);margin-top:var(--space-1)}
+    .header-actions{display:flex;align-items:center;gap:var(--space-2)}
+    .control-btn,.primary-btn{min-height:44px;padding:0 var(--space-4);border-radius:999px;border:1px solid color-mix(in oklab, var(--color-text) 10%, transparent);background:var(--color-surface)}
+    .primary-btn{background:var(--color-primary);border-color:transparent;color:var(--color-text-inverse)}
+    .primary-btn:hover{background:var(--color-primary-hover)}
+    .main{grid-column:2;overflow-y:auto;overscroll-behavior:contain;padding:var(--space-5);display:grid;gap:var(--space-5)}
+    .panel{background:var(--color-surface);border:1px solid color-mix(in oklab, var(--color-text) 10%, transparent);border-radius:var(--radius-xl);box-shadow:var(--shadow-sm);padding:var(--space-5)}
+    .hero-grid,.two-col,.kpis{display:grid;gap:var(--space-4)}
+    .hero-grid{grid-template-columns:1.2fr .8fr}
+    .two-col{grid-template-columns:1fr 1fr}
+    .kpis{grid-template-columns:repeat(3,1fr)}
+    .eyebrow{font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.16em;color:var(--color-text-muted);margin-bottom:var(--space-2)}
+    .lede{color:var(--color-text-muted);max-width:64ch}
+    .metric{padding:var(--space-4);border-radius:var(--radius-lg);background:var(--color-surface-2)}
+    .metric strong{display:block;font-size:var(--text-xl);font-variant-numeric:tabular-nums lining-nums}
+    .metric span{color:var(--color-text-muted);font-size:var(--text-sm)}
+    .inbox-form{display:grid;gap:var(--space-4)}
+    .field{display:grid;gap:var(--space-2)}
+    .label{font-size:var(--text-sm);font-weight:700}
+    .input,.select,.textarea{width:100%;border-radius:var(--radius-md);border:1px solid color-mix(in oklab, var(--color-text) 12%, transparent);background:var(--color-surface-2);padding:0 var(--space-4)}
+    .input,.select{min-height:46px}.textarea{min-height:132px;padding-top:var(--space-3);padding-bottom:var(--space-3);resize:vertical}
+    .helper{font-size:var(--text-xs);color:var(--color-text-muted)}
+    .task-list{display:grid;gap:var(--space-3)}
+    .task{display:grid;grid-template-columns:auto 1fr auto;gap:var(--space-3);align-items:start;padding:var(--space-4);border-radius:var(--radius-lg);background:var(--color-surface-2);border:1px solid color-mix(in oklab, var(--color-text) 8%, transparent)}
+    .task-dot{width:10px;height:10px;border-radius:50%;margin-top:.45rem;background:var(--color-primary)}
+    .task.warning .task-dot{background:var(--color-warning)}
+    .task.success .task-dot{background:var(--color-success)}
+    .task h3{font-size:var(--text-base);margin-bottom:var(--space-1)}
+    .task p,.task small,.empty p{color:var(--color-text-muted)}
+    .pill{display:inline-flex;align-items:center;padding:.35rem .7rem;border-radius:999px;font-size:var(--text-xs);letter-spacing:.08em;text-transform:uppercase}
+    .pill.high{background:var(--color-warning-highlight);color:var(--color-warning)}
+    .pill.medium{background:var(--color-primary-highlight);color:var(--color-primary)}
+    .pill.done{background:var(--color-success-highlight);color:var(--color-success)}
+    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);margin-bottom:var(--space-4)}
+    .toolbar .filters{display:flex;gap:var(--space-2);flex-wrap:wrap}
+    .filter-btn{min-height:38px;padding:0 var(--space-3);border-radius:999px;border:1px solid color-mix(in oklab, var(--color-text) 12%, transparent);background:transparent;font-size:var(--text-sm)}
+    .filter-btn.active{background:var(--color-primary-highlight);color:var(--color-primary);border-color:transparent}
+    .empty{padding:var(--space-8);text-align:center;border-radius:var(--radius-lg);background:var(--color-surface-2)}
+    .muted{color:var(--color-text-muted)}
+    .code-box{background:#111;color:#f4f4ef;border-radius:var(--radius-lg);padding:var(--space-4);overflow:auto;font-size:13px;line-height:1.45;max-height:320px}
+    @media (max-width: 1024px){.app{grid-template-columns:88px 1fr}.sidebar .label-text,.sidebar .side-card p,.sidebar .side-card .muted{display:none}.logo span{display:none}}
+    @media (max-width: 768px){html,body{overflow:auto}.app{display:block;height:auto}.sidebar{border-right:none;border-bottom:1px solid color-mix(in oklab, var(--color-text) 10%, transparent)}.header{position:sticky;top:0;z-index:10}.main{overflow:visible}.hero-grid,.two-col,.kpis{grid-template-columns:1fr}}
+    @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="app">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <div class="logo" aria-label="Life Admin logo">
+        <svg class="logo-mark" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <rect x="7" y="8" width="34" height="32" rx="10"></rect>
+          <path d="M16 24h16"></path>
+          <path d="M24 16v16"></path>
+          <circle cx="24" cy="24" r="3.5" fill="currentColor" stroke="none"></circle>
+        </svg>
+        <span>Life Admin</span>
+      </div>
+      <nav class="nav">
+        <button class="active" data-view="dashboard"><span class="label-text">Dashboard</span></button>
+        <button data-view="capture"><span class="label-text">Quick capture</span></button>
+        <button data-view="queue"><span class="label-text">Risk feed</span></button>
+        <button data-view="builder"><span class="label-text">Copy-paste code</span></button>
+      </nav>
+      <div class="side-card">
+        <div class="eyebrow">Promise</div>
+        <strong>Catch what slips.</strong>
+        <p>One app for renewals, forms, bills, errands, and handoffs.</p>
+      </div>
+    </aside>
+
+    <header class="header">
+      <div class="header-copy">
+        <h1 id="pageTitle">Dashboard</h1>
+        <p id="pageSubtitle">Turn scattered obligations into clean next actions.</p>
+      </div>
+      <div class="header-actions">
+        <button class="control-btn" id="themeToggle" type="button" aria-label="Switch theme">◐</button>
+        <button class="primary-btn" type="button" data-view-jump="capture">Add item</button>
+      </div>
+    </header>
+
+    <main class="main" id="main">
+      <section class="panel view" data-view-panel="dashboard">
+        <div class="hero-grid">
+          <div>
+            <div class="eyebrow">Today</div>
+            <p class="lede">This prototype shows the live structure of Life Admin: capture messy life tasks, classify them, rank risk, and make the next action obvious.</p>
+          </div>
+          <div class="panel" style="padding:var(--space-4);background:var(--color-surface-2)">
+            <div class="eyebrow">Focus</div>
+            <p><strong>One clear job:</strong> prevent avoidable fees, missed deadlines, and household confusion.</p>
+          </div>
+        </div>
+        <div class="kpis" style="margin-top:var(--space-5)">
+          <div class="metric"><strong id="kpiOpen">3</strong><span>Open risks</span></div>
+          <div class="metric"><strong id="kpiHigh">1</strong><span>High priority</span></div>
+          <div class="metric"><strong id="kpiSaved">$87</strong><span>Potential savings</span></div>
+        </div>
+      </section>
+
+      <section class="panel view" data-view-panel="capture" hidden>
+        <div class="eyebrow">Quick capture</div>
+        <div class="two-col">
+          <form class="inbox-form" id="captureForm">
+            <div class="field">
+              <label class="label" for="title">What came in?</label>
+              <input class="input" id="title" name="title" placeholder="Insurance renews Friday" required />
+            </div>
+            <div class="field">
+              <label class="label" for="type">Type</label>
+              <select class="select" id="type" name="type">
+                <option value="renewal">Renewal</option>
+                <option value="bill">Bill</option>
+                <option value="form">Form</option>
+                <option value="errand">Errand</option>
+                <option value="follow-up">Follow-up</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="label" for="priority">Risk level</label>
+              <select class="select" id="priority" name="priority">
+                <option value="high">High</option>
+                <option value="medium" selected>Medium</option>
+                <option value="done">Done</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="label" for="notes">Notes</label>
+              <textarea class="textarea" id="notes" name="notes" placeholder="Auto-renews at $39 unless reviewed first."></textarea>
+              <div class="helper">Tip: paste emails, texts, or real deadlines here.</div>
+            </div>
+            <button class="primary-btn" type="submit">Add to risk feed</button>
+          </form>
+          <div class="panel" style="background:var(--color-surface-2)">
+            <div class="eyebrow">How it works</div>
+            <div class="task-list">
+              <div class="task">
+                <span class="task-dot"></span>
+                <div>
+                  <h3>1. Capture</h3>
+                  <p>Paste the obligation exactly as it arrives.</p>
+                </div>
+              </div>
+              <div class="task warning">
+                <span class="task-dot"></span>
+                <div>
+                  <h3>2. Rank risk</h3>
+                  <p>Flag whether the cost of forgetting is high or moderate.</p>
+                </div>
+              </div>
+              <div class="task success">
+                <span class="task-dot"></span>
+                <div>
+                  <h3>3. Act</h3>
+                  <p>The item appears in the queue with the next correct action.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel view" data-view-panel="queue" hidden>
+        <div class="toolbar">
+          <div>
+            <div class="eyebrow">Risk feed</div>
+            <p class="muted">Ordered by urgency and money at risk.</p>
+          </div>
+          <div class="filters">
+            <button class="filter-btn active" data-filter="all" type="button">All</button>
+            <button class="filter-btn" data-filter="high" type="button">High</button>
+            <button class="filter-btn" data-filter="medium" type="button">Medium</button>
+            <button class="filter-btn" data-filter="done" type="button">Done</button>
+          </div>
+        </div>
+        <div id="taskList" class="task-list"></div>
+        <div id="emptyState" class="empty" hidden>
+          <h2 style="font-size:var(--text-lg);margin-bottom:var(--space-2)">No items in this view</h2>
+          <p>Add a task from Quick capture to populate the queue.</p>
+        </div>
+      </section>
+
+      <section class="panel view" data-view-panel="builder" hidden>
+        <div class="eyebrow">Copy-paste code</div>
+        <p class="lede" style="margin-bottom:var(--space-4)">This section gives you a tiny standalone starter you can paste directly into a new <code>.html</code> file to make the concept live fast.</p>
+        <div class="code-box" id="codeOutput"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const appState = {
+      theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+      view: 'dashboard',
+      filter: 'all',
+      tasks: [
+        { title: 'Car registration expires Tuesday', type: 'renewal', priority: 'high', notes: 'Review before any late fee applies.' },
+        { title: 'Cancel trial before Friday', type: 'bill', priority: 'medium', notes: 'Streaming add-on renews at $19.' },
+        { title: 'Upload camp medical form', type: 'form', priority: 'done', notes: 'Submitted and confirmed.' }
+      ]
+    };
+
+    const standaloneCode = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Life Admin</title>
+  <style>
+    body{font-family:Arial,sans-serif;max-width:760px;margin:40px auto;padding:20px;line-height:1.5}
+    input,select,textarea,button{width:100%;padding:12px;margin-top:8px;margin-bottom:16px}
+    .task{border:1px solid #ddd;border-radius:10px;padding:14px;margin-bottom:12px}
+    .high{border-left:6px solid #b45309}.medium{border-left:6px solid #0f766e}.done{border-left:6px solid #15803d}
+  </style>
+</head>
+<body>
+  <h1>Life Admin</h1>
+  <p>Capture renewals, bills, forms, and errands in one place.</p>
+  <form id="taskForm">
+    <input id="title" placeholder="Insurance renews Friday" required />
+    <select id="priority">
+      <option value="high">High</option>
+      <option value="medium">Medium</option>
+      <option value="done">Done</option>
+    </select>
+    <textarea id="notes" placeholder="Optional notes"></textarea>
+    <button type="submit">Add task</button>
+  </form>
+  <div id="list"></div>
+  <script>
+    const tasks=[];
+    const list=document.getElementById('list');
+    document.getElementById('taskForm').addEventListener('submit',e=>{
+      e.preventDefault();
+      tasks.unshift({
+        title:document.getElementById('title').value,
+        priority:document.getElementById('priority').value,
+        notes:document.getElementById('notes').value
+      });
+      e.target.reset();
+      render();
+    });
+    function render(){
+      list.innerHTML=tasks.map(task=>
+        '<div class="task '+task.priority+'"><strong>'+task.title+'</strong><p>'+task.notes+'</p></div>'
+      ).join('');
+    }
+  <\/script>
+</body>
+</html>`;
+
+    document.documentElement.setAttribute('data-theme', appState.theme);
+    document.getElementById('themeToggle').textContent = appState.theme === 'dark' ? '☼' : '◐';
+
+    function setView(view) {
+      appState.view = view;
+      document.querySelectorAll('[data-view-panel]').forEach(panel => {
+        panel.hidden = panel.dataset.viewPanel !== view;
+      });
+      document.querySelectorAll('.nav button').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === view);
+      });
+      const titles = {
+        dashboard: ['Dashboard', 'Turn scattered obligations into clean next actions.'],
+        capture: ['Quick capture', 'Drop in a task and route it into the risk feed.'],
+        queue: ['Risk feed', 'See what needs attention first.'],
+        builder: ['Copy-paste code', 'Use the starter below to launch a fast version.']
+      };
+      document.getElementById('pageTitle').textContent = titles[view][0];
+      document.getElementById('pageSubtitle').textContent = titles[view][1];
+      if (view === 'queue') renderTasks();
+    }
+
+    function renderTasks() {
+      const list = document.getElementById('taskList');
+      const emptyState = document.getElementById('emptyState');
+      const visible = appState.tasks.filter(task => appState.filter === 'all' || task.priority === appState.filter);
+      list.innerHTML = visible.map(task => `
+        <article class="task ${task.priority === 'high' ? 'warning' : task.priority === 'done' ? 'success' : ''}">
+          <span class="task-dot"></span>
+          <div>
+            <div class="pill ${task.priority}">${task.priority}</div>
+            <h3>${task.title}</h3>
+            <p>${task.notes || 'No notes added.'}</p>
+            <small>${task.type}</small>
+          </div>
+          <button class="control-btn" type="button" onclick="markDone('${task.title.replace(/'/g, "\\'")}')">Done</button>
+        </article>
+      `).join('');
+      emptyState.hidden = visible.length !== 0;
+      updateMetrics();
+    }
+
+    function updateMetrics() {
+      const open = appState.tasks.filter(t => t.priority !== 'done').length;
+      const high = appState.tasks.filter(t => t.priority === 'high').length;
+      const savings = 29 * open;
+      document.getElementById('kpiOpen').textContent = open;
+      document.getElementById('kpiHigh').textContent = high;
+      document.getElementById('kpiSaved').textContent = `$${savings}`;
+    }
+
+    function markDone(title) {
+      appState.tasks = appState.tasks.map(task => task.title === title ? { ...task, priority: 'done' } : task);
+      renderTasks();
+    }
+    window.markDone = markDone;
+
+    document.querySelectorAll('.nav button').forEach(btn => btn.addEventListener('click', () => setView(btn.dataset.view)));
+    document.querySelector('[data-view-jump="capture"]').addEventListener('click', () => setView('capture'));
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      appState.theme = appState.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', appState.theme);
+      document.getElementById('themeToggle').textContent = appState.theme === 'dark' ? '☼' : '◐';
+    });
+
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => {
+      appState.filter = btn.dataset.filter;
+      document.querySelectorAll('.filter-btn').forEach(item => item.classList.toggle('active', item === btn));
+      renderTasks();
+    }));
+
+    document.getElementById('captureForm').addEventListener('submit', event => {
+      event.preventDefault();
+      const form = new FormData(event.target);
+      appState.tasks.unshift({
+        title: form.get('title').trim(),
+        type: form.get('type'),
+        priority: form.get('priority'),
+        notes: form.get('notes').trim()
+      });
+      event.target.reset();
+      setView('queue');
+      renderTasks();
+    });
+
+    document.getElementById('codeOutput').textContent = standaloneCode;
+    updateMetrics();
+    renderTasks();
+  </script>
+</body>
+</html>
